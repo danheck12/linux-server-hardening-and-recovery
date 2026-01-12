@@ -1,13 +1,13 @@
-# Linux Server Hardening and Recovery Lab
+# Linux Server Hardening, Recovery, and Automation Lab
 
 ## Overview
 
-This project is a hands-on Linux engineering lab focused on **system hardening, failure injection, incident response, and recovery procedures**.  
-It demonstrates real-world Linux operational scenarios including boot failures, disk exhaustion, systemd service crashes, and permissions incidents.
+This project is a hands-on Linux engineering lab focused on **system hardening, failure injection, incident response, recovery procedures, and automation**.  
+It demonstrates real-world Linux operational scenarios including boot failures, disk exhaustion, systemd service crashes, permissions incidents, and SSH lockouts — all recovered using production-grade methods.
 
-The goal of this project is to simulate **production-style Linux incidents**, recover from them using proper tooling and methodology, and document the process with operational runbooks.
+The project is intentionally designed to simulate **real production incidents**, recover from them safely, and document each scenario with detailed operational runbooks.
 
-This repository is designed to showcase **practical Linux engineering skills**, not just theoretical knowledge.
+This repository showcases **practical Linux engineering and SRE skills**, not just theoretical knowledge.
 
 ---
 
@@ -18,17 +18,18 @@ This repository is designed to showcase **practical Linux engineering skills**, 
 - Diagnose issues using standard Linux tooling
 - Recover systems safely and methodically
 - Document recovery procedures in runbooks
-- Prepare for automation using Ansible
+- Automate configuration and hardening using Ansible
+- Validate system state with audit playbooks
 
 ---
 
 ## Architecture
 
 - **Platform:** AWS EC2
-- **Operating System:** Ubuntu 22.04 LTS
+- **Operating System:** Ubuntu 24.04 LTS
 - **Access Methods:**
   - SSH (key-based)
-  - AWS SSM Session Manager (for recovery scenarios)
+  - AWS SSM Session Manager (break-glass recovery)
 - **Storage:**
   - Root EBS volume
   - Secondary EBS volume for filesystem and fstab recovery drills
@@ -44,27 +45,41 @@ This repository is designed to showcase **practical Linux engineering skills**, 
 │ │ ├── R2-broken-fstab.md
 │ │ ├── R3-disk-full.md
 │ │ ├── R4-systemd-service-failure.md
-│ │ └── R5-permissions-ownership-incident.md
+│ │ ├── R5-permissions-ownership-incident.md
+│ │ └── R6-ssh-lockout-recovery.md
 │ └── evidence
 │ └── commands-and-outputs.md
 ├── scripts
 │ └── chaos
 │ ├── break_demo_app_service.sh
-│ └── break_permissions.sh
+│ ├── break_permissions.sh
+│ └── ssh_lockout_allowusers.sh
 └── ansible
+├── ansible.cfg
+├── inventory
+│ └── hosts.ini
+├── group_vars
+│ └── all.yml
 ├── playbooks
-├── roles
-└── inventory
+│ ├── site.yml
+│ └── audit.yml
+└── roles
+├── baseline
+├── ssh_hardening
+├── ufw
+├── fail2ban
+├── demo_app
+└── audit
 
 markdown
 Copy code
 
 ---
 
-## Implemented Scenarios
+## Implemented Recovery Scenarios
 
 ### R2 – Broken `/etc/fstab` Boot Failure
-- Invalid filesystem mount entry added
+- Invalid filesystem mount entry injected
 - System drops to emergency mode during boot
 - Recovery using SSM, root remount, and fstab correction
 
@@ -86,6 +101,12 @@ Copy code
 - Ownership and permission correction
 - Service recovery verified
 
+### R6 – SSH Lockout Recovery
+- Accidental access restriction via `sshd_config`
+- New SSH sessions blocked
+- Recovery performed using AWS SSM Session Manager
+- SSH access safely restored
+
 ---
 
 ## Chaos Engineering Scripts
@@ -99,10 +120,71 @@ Copy code
 
 Examples:
 
-```bash
+``bash
 ./scripts/chaos/break_demo_app_service.sh
 ./scripts/chaos/break_permissions.sh
+./scripts/chaos/ssh_lockout_allowusers.sh
 Each script introduces a controlled failure that is then resolved using the documented runbooks.
+
+Ansible Automation
+This project includes full Ansible automation to enforce baseline configuration, hardening, service deployment, and auditing.
+
+Automated Components
+Baseline Role
+
+Common troubleshooting tools (tmux, jq, sysstat, iotop, tcpdump, etc.)
+
+System utilities and observability tooling
+
+SSH Hardening Role
+
+Disable root login
+
+Disable password authentication
+
+Enforce AllowUsers
+
+Validate configuration with sshd -t before reload
+
+UFW Firewall Role
+
+Default deny incoming
+
+Allow SSH only from approved CIDRs
+
+fail2ban Role
+
+sshd jail configuration
+
+Brute-force protection
+
+demo-app Role
+
+Deploys a sample systemd service
+
+Used for service failure drills (R4)
+
+Audit Role
+
+Verifies:
+
+SSH effective settings
+
+UFW firewall state
+
+fail2ban status
+
+demo-app service health
+
+Main Playbook
+bash
+Copy code
+ansible-playbook playbooks/site.yml --private-key ~/.ssh/linux-lab.pem
+Audit Playbook
+bash
+Copy code
+ansible-playbook playbooks/audit.yml --private-key ~/.ssh/linux-lab.pem
+This ensures the system is both configured and continuously verifiable.
 
 Evidence Collection
 Command outputs, observations, and recovery steps are captured in:
@@ -111,19 +193,6 @@ bash
 Copy code
 docs/evidence/commands-and-outputs.md
 This mirrors real operational incident documentation practices.
-
-Automation (Ansible)
-The ansible/ directory is reserved for automating:
-
-Baseline system configuration
-
-Hardening controls
-
-Service deployment
-
-Audit and compliance checks
-
-Manual implementation is completed first to ensure full understanding before automation.
 
 Skills Demonstrated
 Linux system hardening
@@ -136,9 +205,17 @@ Disk usage analysis and cleanup
 
 Permissions and ownership debugging
 
+SSH access recovery and break-glass procedures
+
+AWS SSM Session Manager usage
+
+Ansible automation and role design
+
+Audit and compliance mindset
+
 Incident response and runbook documentation
 
-Cloud-based Linux operations (AWS EC2 + SSM)
+Cloud-based Linux operations (AWS EC2)
 
 How to Use This Repository
 Review the runbooks in docs/runbooks/
@@ -149,7 +226,9 @@ Follow runbook procedures to recover the system
 
 Capture evidence in docs/evidence/commands-and-outputs.md
 
-(Optional) Implement automation using Ansible
+Apply automation using Ansible playbooks
+
+Verify system state using the audit playbook
 
 Disclaimer
 This project intentionally breaks system components for learning purposes.
@@ -160,3 +239,4 @@ Built and maintained as part of a Linux engineering learning and portfolio proje
 
 yaml
 Copy code
+
