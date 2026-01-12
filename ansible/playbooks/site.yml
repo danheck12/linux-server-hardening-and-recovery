@@ -1,0 +1,14 @@
+---
+- name: Configure Linux lab server (baseline + hardening)
+  hosts: linux_lab
+  become: true
+
+  vars_files:
+    - ../group_vars/all.yml
+
+  roles:
+    - baseline
+    - ssh_hardening
+    - ufw
+    - fail2ban
+    - demo_app

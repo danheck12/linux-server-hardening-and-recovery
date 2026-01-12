@@ -1,0 +1,38 @@
+---
+- name: Backup sshd_config
+  ansible.builtin.copy:
+    src: /etc/ssh/sshd_config
+    dest: "/etc/ssh/sshd_config.bak.ansible"
+    remote_src: true
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Configure sshd hardening options
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "^{{ item.key }}\\s+"
+    line: "{{ item.key }} {{ item.value }}"
+  loop:
+    - { key: "PermitRootLogin", value: "{{ 'no' if ssh_disable_root_login else 'yes' }}" }
+    - { key: "PasswordAuthentication", value: "{{ 'no' if ssh_disable_password_auth else 'yes' }}" }
+    - { key: "PubkeyAuthentication", value: "yes" }
+    - { key: "ChallengeResponseAuthentication", value: "no" }
+    - { key: "ClientAliveInterval", value: "{{ ssh_client_alive_interval }}" }
+    - { key: "ClientAliveCountMax", value: "{{ ssh_client_alive_countmax }}" }
+
+- name: Ensure AllowUsers is present (managed block)
+  ansible.builtin.blockinfile:
+    path: /etc/ssh/sshd_config
+    marker: "# {mark} ANSIBLE MANAGED ALLOWUSERS"
+    block: |
+      AllowUsers {{ ssh_allow_users | join(' ') }}
+
+- name: Validate sshd config
+  ansible.builtin.command: sshd -t
+  changed_when: false
+
+- name: Reload SSH safely
+  ansible.builtin.service:
+    name: ssh
+    state: reloaded

@@ -1,0 +1,6 @@
+---
+- name: Audit Linux lab configuration
+  hosts: linux_lab
+  become: true
+  roles:
+    - audit

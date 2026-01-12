@@ -1,0 +1,39 @@
+---
+- name: SSH effective settings
+  ansible.builtin.command: sshd -T
+  register: sshd_t
+  changed_when: false
+
+- name: Print key sshd settings
+  ansible.builtin.debug:
+    msg: "{{ sshd_t.stdout_lines | select('match', '^(permitrootlogin|passwordauthentication|pubkeyauthentication|allowusers)') | list }}"
+
+- name: UFW status
+  ansible.builtin.command: ufw status verbose
+  register: ufw_status
+  changed_when: false
+  failed_when: false
+
+- name: Print UFW status
+  ansible.builtin.debug:
+    var: ufw_status.stdout_lines
+
+- name: fail2ban sshd status
+  ansible.builtin.command: fail2ban-client status sshd
+  register: f2b
+  changed_when: false
+  failed_when: false
+
+- name: Print fail2ban status
+  ansible.builtin.debug:
+    var: f2b.stdout_lines
+
+- name: demo-app status
+  ansible.builtin.command: systemctl status demo-app --no-pager
+  register: demo_status
+  changed_when: false
+  failed_when: false
+
+- name: Print demo-app status
+  ansible.builtin.debug:
+    var: demo_status.stdout_lines

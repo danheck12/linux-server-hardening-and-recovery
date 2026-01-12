@@ -1,0 +1,51 @@
+---
+- name: Create demo app directory
+  ansible.builtin.file:
+    path: /opt/demo-app
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install demo app script
+  ansible.builtin.copy:
+    dest: /opt/demo-app/demo-app.sh
+    owner: root
+    group: root
+    mode: "0755"
+    content: |
+      #!/usr/bin/env bash
+      while true; do
+        echo "$(date -Is) demo-app alive" | systemd-cat -t demo-app
+        sleep 5
+      done
+
+- name: Install systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/demo-app.service
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Demo App (logs to journald)
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart=/opt/demo-app/demo-app.sh
+      Restart=always
+      RestartSec=2
+
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Reload systemd
+  ansible.builtin.command: systemctl daemon-reload
+  changed_when: false
+
+- name: Enable and start demo-app
+  ansible.builtin.service:
+    name: demo-app
+    enabled: true
+    state: started

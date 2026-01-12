@@ -1,0 +1,33 @@
+---
+baseline_packages:
+  - tmux
+  - jq
+  - unzip
+  - curl
+  - wget
+  - git
+  - net-tools
+  - lsof
+  - strace
+  - sysstat
+  - iotop
+  - tcpdump
+  - vim
+  - ripgrep
+
+# SSH hardening
+ssh_allow_users:
+  - ares
+ssh_disable_root_login: true
+ssh_disable_password_auth: true
+ssh_client_alive_interval: 300
+ssh_client_alive_countmax: 2
+
+# Firewall
+ufw_ssh_allowed_cidrs:
+  - "107.140.205.52/32"
+
+# fail2ban
+fail2ban_sshd_maxretry: 5
+fail2ban_sshd_findtime: "10m"
+fail2ban_sshd_bantime: "1h"
