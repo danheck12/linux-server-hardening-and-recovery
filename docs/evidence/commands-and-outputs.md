@@ -145,3 +145,24 @@ This project intentionally breaks system components for learning purposes.
 Do not run these drills on production systems.
 
 
+## R6 – SSH Lockout Recovery
+
+Injected lockout by setting:
+
+AllowUsers root
+
+Observed:
+- New SSH sessions failed with "Permission denied"
+- Existing session remained active
+
+Recovered via AWS SSM Session Manager:
+- Removed restrictive AllowUsers directive
+- Validated with sshd -t
+- Reloaded SSH
+- Verified SSH access restored
+
+Commands used:
+
+sshd -t
+systemctl reload ssh
+ssh ares@<host>
