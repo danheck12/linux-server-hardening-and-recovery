@@ -237,6 +237,4 @@ Do not run these drills on production systems.
 Author
 Built and maintained as part of a Linux engineering learning and portfolio project.
 
-yaml
-Copy code
 
