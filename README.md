@@ -1,18 +1,30 @@
 # Linux Server Hardening, Recovery, and Automation Lab
 
-## Overview
+![Last Commit](https://img.shields.io/github/last-commit/danheck12/linux-server-hardening-and-recovery)
+![Repo Size](https://img.shields.io/github/repo-size/danheck12/linux-server-hardening-and-recovery)
+![Stars](https://img.shields.io/github/stars/danheck12/linux-server-hardening-and-recovery?style=social)
 
-This project is a hands-on Linux engineering lab focused on **system hardening, failure injection, incident response, recovery procedures, and automation**.  
-It demonstrates real-world Linux operational scenarios including boot failures, disk exhaustion, systemd service crashes, permissions incidents, and SSH lockouts — all recovered using production-grade methods.
+Hands-on Linux engineering lab focused on **system hardening, failure injection, incident response, recovery procedures, and automation**.
+Designed to simulate common production incidents (boot failures, disk exhaustion, systemd crashes, permissions incidents, SSH lockouts) and recover using production-grade methods and documented runbooks.
 
-The project is intentionally designed to simulate **real production incidents**, recover from them safely, and document each scenario with detailed operational runbooks.
+> ⚠️ Safety: This project intentionally breaks system components for learning. Do **not** run these drills on production systems.
 
-This repository showcases **practical Linux engineering and SRE skills**, not just theoretical knowledge.
+---
+
+## Table of Contents
+- [Objectives](#objectives)
+- [Architecture](#architecture)
+- [Repository Structure](#repository-structure)
+- [Getting Started](#getting-started)
+- [Recovery Scenarios](#recovery-scenarios)
+- [Chaos Scripts](#chaos-scripts)
+- [Ansible Automation](#ansible-automation)
+- [Evidence Collection](#evidence-collection)
+- [Skills Demonstrated](#skills-demonstrated)
 
 ---
 
 ## Objectives
-
 - Harden a Linux server using best practices
 - Simulate common production failures
 - Diagnose issues using standard Linux tooling
@@ -24,217 +36,199 @@ This repository showcases **practical Linux engineering and SRE skills**, not ju
 ---
 
 ## Architecture
-
-- **Platform:** AWS EC2
-- **Operating System:** Ubuntu 24.04 LTS
-- **Access Methods:**
+- Platform: AWS EC2
+- OS: Ubuntu 24.04 LTS
+- Access:
   - SSH (key-based)
   - AWS SSM Session Manager (break-glass recovery)
-- **Storage:**
+- Storage:
   - Root EBS volume
-  - Secondary EBS volume for filesystem and fstab recovery drills
+  - Secondary EBS volume for filesystem + `/etc/fstab` recovery drills
 
 ---
 
 ## Repository Structure
-
 .
 ├── README.md
-├── docs
-│ ├── runbooks
+├── docs/
+│ ├── runbooks/
 │ │ ├── R2-broken-fstab.md
 │ │ ├── R3-disk-full.md
 │ │ ├── R4-systemd-service-failure.md
 │ │ ├── R5-permissions-ownership-incident.md
 │ │ └── R6-ssh-lockout-recovery.md
-│ └── evidence
+│ └── evidence/
 │ └── commands-and-outputs.md
-├── scripts
-│ └── chaos
+├── scripts/
+│ └── chaos/
 │ ├── break_demo_app_service.sh
 │ ├── break_permissions.sh
 │ └── ssh_lockout_allowusers.sh
-└── ansible
+└── ansible/
 ├── ansible.cfg
-├── inventory
-│ └── hosts.ini
-├── group_vars
-│ └── all.yml
-├── playbooks
+├── inventory/hosts.ini
+├── group_vars/all.yml
+├── playbooks/
 │ ├── site.yml
 │ └── audit.yml
-└── roles
-├── baseline
-├── ssh_hardening
-├── ufw
-├── fail2ban
-├── demo_app
-└── audit
+└── roles/
+├── baseline/
+├── ssh_hardening/
+├── ufw/
+├── fail2ban/
+├── demo_app/
+└── audit/
 
-markdown
+yaml
 Copy code
 
 ---
 
-## Implemented Recovery Scenarios
+## Getting Started
 
-### R2 – Broken `/etc/fstab` Boot Failure
-- Invalid filesystem mount entry injected
-- System drops to emergency mode during boot
-- Recovery using SSM, root remount, and fstab correction
+### Prerequisites
+- AWS account access to create/manage EC2 + IAM/SSM components
+- AWS CLI configured (`aws sts get-caller-identity` works)
+- Ansible installed locally
+- SSH keypair available
+- Recommended: create the instance with SSM access (Session Manager) for break-glass recovery
 
-### R3 – Disk Full Incident
-- Root filesystem exhaustion
-- Services and commands fail due to lack of space
-- Diagnosis using `df`, `du`, and `journalctl`
-- Cleanup and recovery procedures documented
+### 1) Provision an EC2 instance
+Minimum suggestions (you can tighten later):
+- Ubuntu 24.04 LTS
+- Instance type: t3.small (or similar)
+- Security group:
+  - SSH (22) from your IP (optional if you rely on SSM)
+- Attach an IAM role with:
+  - `AmazonSSMManagedInstanceCore`
 
-### R4 – systemd Service Failure
-- Misconfigured `ExecStart` directive
-- Service fails to start and enters failed state
-- Diagnosis using `systemctl`, `journalctl`, and `systemd-analyze`
-- Unit file correction and service restoration
+Ensure SSM is working:
+- AWS Console → Systems Manager → Fleet Manager → Managed nodes
+- or use Session Manager to open a shell.
 
-### R5 – Permissions and Ownership Incident
-- Application unable to write to log directory
-- Diagnosis using `ls -l`, `namei`, and `getfacl`
-- Ownership and permission correction
-- Service recovery verified
+### 2) Configure Ansible inventory
+Edit:
+`ansible/inventory/hosts.ini`
 
-### R6 – SSH Lockout Recovery
-- Accidental access restriction via `sshd_config`
-- New SSH sessions blocked
-- Recovery performed using AWS SSM Session Manager
-- SSH access safely restored
-
----
-
-## Chaos Engineering Scripts
-
-Failure scenarios are injected using scripts located in:
-
-scripts/chaos/
+Example:
+```ini
+[linux_lab]
+<EC2_PUBLIC_IP_OR_DNS> ansible_user=ubuntu
+3) Run the hardening + baseline playbook
+From repo root:
 
 bash
 Copy code
+cd ansible
+ansible-playbook playbooks/site.yml --private-key ~/.ssh/<your-key>.pem
+4) Run the audit playbook (verification)
+bash
+Copy code
+ansible-playbook playbooks/audit.yml --private-key ~/.ssh/<your-key>.pem
+5) Inject a failure and recover using a runbook
+From repo root:
+
+bash
+Copy code
+./scripts/chaos/break_demo_app_service.sh
+# then follow:
+# docs/runbooks/R4-systemd-service-failure.md
+Recovery Scenarios
+R2 – Broken /etc/fstab Boot Failure
+Inject invalid mount entry
+
+System drops to emergency mode
+
+Recover using SSM, remount root, correct fstab
+
+R3 – Disk Full Incident
+Exhaust root filesystem
+
+Diagnose via df, du, journalctl
+
+Cleanup + recovery
+
+R4 – systemd Service Failure
+Break ExecStart
+
+Diagnose via systemctl, journalctl, systemd-analyze
+
+Fix unit file + restore service
+
+R5 – Permissions / Ownership Incident
+App cannot write logs
+
+Diagnose via ls -l, namei, getfacl
+
+Correct perms/ownership and validate
+
+R6 – SSH Lockout Recovery
+Restrict access in sshd_config
+
+New sessions blocked
+
+Recover via SSM Session Manager and restore safe SSH access
+
+Chaos Scripts
+Scripts live in:
+scripts/chaos/
 
 Examples:
 
-``bash
+bash
+Copy code
 ./scripts/chaos/break_demo_app_service.sh
 ./scripts/chaos/break_permissions.sh
 ./scripts/chaos/ssh_lockout_allowusers.sh
-Each script introduces a controlled failure that is then resolved using the documented runbooks.
+Each script introduces a controlled failure intended to be recovered via the corresponding runbook.
 
 Ansible Automation
-This project includes full Ansible automation to enforce baseline configuration, hardening, service deployment, and auditing.
+Roles included:
 
-Automated Components
-Baseline Role
+baseline: troubleshooting tools + utilities
 
-Common troubleshooting tools (tmux, jq, sysstat, iotop, tcpdump, etc.)
+ssh_hardening: disable root, disable password auth, validate config (sshd -t)
 
-System utilities and observability tooling
+ufw: default deny inbound, allow SSH from approved CIDRs
 
-SSH Hardening Role
+fail2ban: sshd jail
 
-Disable root login
+demo_app: deploy sample systemd service for drills
 
-Disable password authentication
+audit: verify effective config + service health
 
-Enforce AllowUsers
+Run:
 
-Validate configuration with sshd -t before reload
-
-UFW Firewall Role
-
-Default deny incoming
-
-Allow SSH only from approved CIDRs
-
-fail2ban Role
-
-sshd jail configuration
-
-Brute-force protection
-
-demo-app Role
-
-Deploys a sample systemd service
-
-Used for service failure drills (R4)
-
-Audit Role
-
-Verifies:
-
-SSH effective settings
-
-UFW firewall state
-
-fail2ban status
-
-demo-app service health
-
-Main Playbook
 bash
 Copy code
-ansible-playbook playbooks/site.yml --private-key ~/.ssh/linux-lab.pem
-Audit Playbook
-bash
-Copy code
-ansible-playbook playbooks/audit.yml --private-key ~/.ssh/linux-lab.pem
-This ensures the system is both configured and continuously verifiable.
-
+cd ansible
+ansible-playbook playbooks/site.yml --private-key ~/.ssh/<your-key>.pem
+ansible-playbook playbooks/audit.yml --private-key ~/.ssh/<your-key>.pem
 Evidence Collection
-Command outputs, observations, and recovery steps are captured in:
-
-bash
-Copy code
+Capture command outputs and observations in:
 docs/evidence/commands-and-outputs.md
-This mirrors real operational incident documentation practices.
+
+This mirrors real incident documentation practices.
 
 Skills Demonstrated
 Linux system hardening
 
-systemd internals and troubleshooting
+systemd internals + troubleshooting
 
-Filesystem and boot recovery
+Boot + filesystem recovery
 
-Disk usage analysis and cleanup
+Disk usage analysis
 
-Permissions and ownership debugging
+Permissions debugging
 
-SSH access recovery and break-glass procedures
+SSH recovery + break-glass access
 
-AWS SSM Session Manager usage
+AWS SSM Session Manager operations
 
-Ansible automation and role design
+Ansible role design + auditing mindset
 
-Audit and compliance mindset
+Runbook-driven incident response
 
-Incident response and runbook documentation
-
-Cloud-based Linux operations (AWS EC2)
-
-How to Use This Repository
-Review the runbooks in docs/runbooks/
-
-Use chaos scripts in scripts/chaos/ to inject failures
-
-Follow runbook procedures to recover the system
-
-Capture evidence in docs/evidence/commands-and-outputs.md
-
-Apply automation using Ansible playbooks
-
-Verify system state using the audit playbook
-
-Disclaimer
-This project intentionally breaks system components for learning purposes.
-Do not run these drills on production systems.
-
-Author
-Built and maintained as part of a Linux engineering learning and portfolio project.
-
+yaml
+Copy code
 
