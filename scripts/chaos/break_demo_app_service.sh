@@ -4,7 +4,7 @@ set -e
 SERVICE_FILE="/etc/systemd/system/demo-app.service"
 
 echo "[*] Backing up service file..."
-sudo cp $SERVICE_FILE ${SERVICE_FILE}.bak.$(date +%F-%T)
+sudo cp "$SERVICE_FILE" "${SERVICE_FILE}.bak.$(date +%F-%T)"
 
 echo "[*] Breaking ExecStart..."
 sudo sed -i 's|^ExecStart=.*|ExecStart=/opt/demo-app/does-not-exist.sh|' $SERVICE_FILE
