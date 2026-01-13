@@ -37,7 +37,7 @@ Designed to simulate common production incidents (boot failures, disk exhaustion
 
 ## Architecture
 - Platform: AWS EC2
-- OS: Ubuntu 24.04 LTS
+- OS: Ubuntu 22.04 LTS
 - Access:
   - SSH (key-based)
   - AWS SSM Session Manager (break-glass recovery)
@@ -231,4 +231,5 @@ Runbook-driven incident response
 
 yaml
 Copy code
+
 
