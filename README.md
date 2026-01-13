@@ -1,8 +1,11 @@
 # Linux Server Hardening, Recovery, and Automation Lab
 
+![ShellCheck](https://github.com/danheck12/linux-server-hardening-and-recovery/actions/workflows/lint.yml/badge.svg)
+![Ansible Lint](https://github.com/danheck12/linux-server-hardening-and-recovery/actions/workflows/ansible-lint.yml/badge.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/danheck12/linux-server-hardening-and-recovery)
 ![Repo Size](https://img.shields.io/github/repo-size/danheck12/linux-server-hardening-and-recovery)
 ![Stars](https://img.shields.io/github/stars/danheck12/linux-server-hardening-and-recovery?style=social)
+
 
 Hands-on Linux engineering lab focused on **system hardening, failure injection, incident response, recovery procedures, and automation**.
 Designed to simulate common production incidents (boot failures, disk exhaustion, systemd crashes, permissions incidents, SSH lockouts) and recover using production-grade methods and documented runbooks.
@@ -231,5 +234,6 @@ Runbook-driven incident response
 
 yaml
 Copy code
+
 
 
